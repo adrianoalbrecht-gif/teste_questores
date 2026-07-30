@@ -1,0 +1,79 @@
+unit database.connection;
+
+interface
+
+uses
+  System.SysUtils,
+  System.Classes,
+  FireDAC.Stan.Intf,
+  FireDAC.Stan.Option,
+  FireDAC.Stan.Error,
+  FireDAC.UI.Intf,
+  FireDAC.Phys.Intf,
+  FireDAC.Stan.Def,
+  FireDAC.Stan.Pool,
+  FireDAC.Stan.Async,
+  FireDAC.Phys,
+  FireDAC.Comp.Client,
+  FireDAC.Phys.PG,
+  FireDAC.Phys.PGDef,
+  FireDAC.VCLUI.Wait;
+
+type
+  TConnectionFactory = class
+  private
+    class var FDriverLink: TFDPhysPgDriverLink;
+    class procedure ConfigurarDriver;
+  public
+    // Método estático responsável por criar e retornar uma nova conexão pronta
+    class function CriarConexao: TFDConnection;
+  end;
+
+implementation
+
+{ TConnectionFactory }
+
+class procedure TConnectionFactory.ConfigurarDriver;
+begin
+  if not Assigned(FDriverLink) then
+  begin
+    FDriverLink := TFDPhysPgDriverLink.Create(nil);
+    FDriverLink.VendorHome := '';
+    FDriverLink.VendorLib  := 'C:\Program Files\PostgreSQL\18\bin\libpq.dll';
+  end;
+end;
+
+class function TConnectionFactory.CriarConexao: TFDConnection;
+begin
+  // Garante a inicialização do Driver do Postgres
+  ConfigurarDriver;
+
+  Result := TFDConnection.Create(nil);
+  try
+    Result.Params.Clear;
+    Result.Params.DriverID := 'PG';
+    Result.Params.Add('Server=localhost');
+    Result.Params.Add('Port=5432');
+    Result.Params.Add('Database=postgres');
+    Result.Params.Add('User_Name=postgres');
+    Result.Params.Add('Password=sys1499156');
+    Result.Params.Add('CharacterSet=utf8');
+    Result.LoginPrompt := False;
+
+    Result.Connected := True;
+  except
+    on E: Exception do
+    begin
+      FreeAndNil(Result);
+      raise Exception.Create('Erro ao conectar ao PostgreSQL: ' + E.Message);
+    end;
+  end;
+end;
+
+initialization
+
+finalization
+  if Assigned(TConnectionFactory.FDriverLink) then
+    FreeAndNil(TConnectionFactory.FDriverLink);
+
+end.

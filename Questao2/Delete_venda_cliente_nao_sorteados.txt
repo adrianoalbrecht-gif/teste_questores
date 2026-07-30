@@ -1,0 +1,37 @@
+DELETE
+FROM
+   VENDA V
+WHERE
+	NOT EXISTS (
+                  SELECT
+                     1
+                  FROM (
+                         SELECT
+                           V_SORT.ID_CLIENTE
+                         FROM
+                           VENDA V_SORT
+                           INNER JOIN CLIENTE C_SORT ON V_SORT.ID_CLIENTE = C_SORT.ID_CLIENTE
+                           INNER JOIN CARRO CAR_SORT ON V_SORT.ID_CARRO = CAR_SORT.ID_CARRO
+                         WHERE
+                           UPPER(CAR_SORT.MODELO) = 'MAREA'
+                           AND CAR_SORT.ANO_LANCAMENTO = 2021
+                           AND C_SORT.CPF_CNPJ LIKE '0%'
+                           AND C_SORT.ID_CLIENTE NOT IN (
+                                                            SELECT
+                                                               V_SUB.ID_CLIENTE
+                                                            FROM
+                                                               VENDA V_SUB
+                                                               INNER JOIN CARRO C_SUB ON V_SUB.ID_CARRO = C_SUB.ID_CARRO
+                                                            WHERE
+                                                               UPPER(C_SUB.MODELO) = 'MAREA'
+                                                            GROUP BY
+                                                               V_SUB.ID_CLIENTE
+                                                            HAVING COUNT(*) >= 2
+                                                         )
+                           ORDER BY
+                              V_SORT.DATA_VENDA ASC
+                           FETCH FIRST 15 ROWS ONLY
+                     ) SORTEADOS
+                  WHERE
+                     SORTEADOS.ID_CLIENTE = V.ID_CLIENTE
+               );

@@ -1,0 +1,371 @@
+object fmGeral: TfmGeral
+  Left = 0
+  Top = 0
+  Caption = 'P'#225'gina Inicial'
+  ClientHeight = 485
+  ClientWidth = 669
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  OnClose = FormClose
+  OnCreate = FormCreate
+  TextHeight = 15
+  object btnCadastrarCarros: TBitBtn
+    Left = 8
+    Top = 55
+    Width = 153
+    Height = 25
+    Caption = 'Cadastrar novos carros'
+    TabOrder = 0
+    OnClick = btnCadastrarCarrosClick
+  end
+  object btnSorteio: TBitBtn
+    Left = 192
+    Top = 57
+    Width = 153
+    Height = 25
+    Caption = 'Sortear'
+    TabOrder = 1
+    OnClick = btnSorteioClick
+  end
+  object GridSorteados: TDBGrid
+    Left = 8
+    Top = 88
+    Width = 657
+    Height = 377
+    DataSource = dsSorteio
+    TabOrder = 2
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -12
+    TitleFont.Name = 'Segoe UI'
+    TitleFont.Style = []
+    Columns = <
+      item
+        Expanded = False
+        FieldName = 'ID_CLIENTE'
+        Title.Caption = 'ID Cliente'
+        Width = 57
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'NOME'
+        Title.Caption = 'Nome cliente'
+        Width = 200
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'CPF_CNPJ'
+        Title.Caption = 'CPF'
+        Width = 109
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'ID_VENDA'
+        Title.Caption = 'ID Venda'
+        Width = 55
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'DATA_VENDA'
+        Title.Caption = 'Data venda'
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'MODELO'
+        Title.Caption = 'Modelo carro'
+        Width = 100
+        Visible = True
+      end>
+  end
+  object btnCadastrarClientes: TBitBtn
+    Left = 8
+    Top = 24
+    Width = 153
+    Height = 25
+    Caption = 'Cadastrar novos clientes'
+    TabOrder = 3
+    OnClick = btnCadastrarClientesClick
+  end
+  object btnCriarVenda: TBitBtn
+    Left = 192
+    Top = 24
+    Width = 153
+    Height = 25
+    Caption = 'Gerar venda novos clientes'
+    TabOrder = 4
+    OnClick = btnCriarVendaClick
+  end
+  object btnExcluirVendas: TBitBtn
+    Left = 368
+    Top = 24
+    Width = 153
+    Height = 25
+    Caption = 'Excluir vendas n'#227'o sorteadas'
+    TabOrder = 5
+    OnClick = btnExcluirVendasClick
+  end
+  object qrProxIdCliente: TFDQuery
+    Connection = Connection
+    SQL.Strings = (
+      'SELECT MAX(ID_CLIENTE) + 1 AS NOVO_ID FROM CLIENTE')
+    Left = 560
+    Top = 8
+  end
+  object InsertCliente: TFDCommand
+    Connection = Connection
+    ResourceOptions.AssignedValues = [rvDirectExecute]
+    ResourceOptions.DirectExecute = True
+    UpdateOptions.AssignedValues = [uvAutoCommitUpdates]
+    UpdateOptions.AutoCommitUpdates = True
+    CommandKind = skInsert
+    CommandText.Strings = (
+      'INSERT INTO CLIENTE (id_cliente, nome, cpf_cnpj) VALUES'
+      '(:ID_CLIENTE,:NOME,:CPF_CNPJ)')
+    ParamData = <
+      item
+        Name = 'ID_CLIENTE'
+        DataType = ftInteger
+        ParamType = ptInput
+      end
+      item
+        Name = 'NOME'
+        DataType = ftWideString
+        ParamType = ptInput
+      end
+      item
+        Name = 'CPF_CNPJ'
+        DataType = ftWideString
+        ParamType = ptInput
+      end>
+    Left = 553
+    Top = 128
+  end
+  object InsertCarro: TFDCommand
+    Connection = Connection
+    CommandKind = skInsert
+    CommandText.Strings = (
+      
+        'INSERT INTO CARRO (id_carro, modelo, ano_lancamento) VALUES (:ID' +
+        ', :MODELO, :ANO)')
+    ParamData = <
+      item
+        Name = 'ID'
+        DataType = ftInteger
+        ParamType = ptInput
+      end
+      item
+        Name = 'MODELO'
+        DataType = ftWideString
+        ParamType = ptInput
+      end
+      item
+        Name = 'ANO'
+        DataType = ftInteger
+        ParamType = ptInput
+      end>
+    Left = 585
+    Top = 128
+  end
+  object InsertVenda: TFDCommand
+    Connection = Connection
+    CommandKind = skInsert
+    CommandText.Strings = (
+      
+        'INSERT INTO VENDA (id_venda, id_cliente, id_carro, data_venda) V' +
+        'ALUES (:ID, :CLIENTE, :CARRO, :DATA)')
+    ParamData = <
+      item
+        Name = 'ID'
+        DataType = ftInteger
+        ParamType = ptInput
+      end
+      item
+        Name = 'CLIENTE'
+        DataType = ftInteger
+        ParamType = ptInput
+      end
+      item
+        Name = 'CARRO'
+        DataType = ftInteger
+        ParamType = ptInput
+      end
+      item
+        Name = 'DATA'
+        DataType = ftDate
+        ParamType = ptInput
+      end>
+    Left = 617
+    Top = 128
+  end
+  object qrProxIDCarro: TFDQuery
+    Connection = Connection
+    SQL.Strings = (
+      'select max(id_carro) + 1 as novo_id from carro')
+    Left = 592
+    Top = 8
+  end
+  object qrCarrosAleatorios: TFDQuery
+    Connection = Connection
+    SQL.Strings = (
+      'SELECT id_carro FROM carro ORDER BY RANDOM() LIMIT 5')
+    Left = 560
+    Top = 64
+  end
+  object qrProxIDVenda: TFDQuery
+    Connection = Connection
+    SQL.Strings = (
+      'select max(id_venda) + 1 as novo_id from venda')
+    Left = 624
+    Top = 8
+  end
+  object Connection: TFDConnection
+    Params.Strings = (
+      'Database=postgres'
+      'User_Name=postgres'
+      'Password=sys1499156'
+      'DriverID=PG')
+    Left = 368
+    Top = 56
+  end
+  object qrSorteio: TFDQuery
+    Connection = Connection
+    SQL.Strings = (
+      'SELECT '
+      '    CLI.ID_CLIENTE,'
+      '    CLI.NOME,'
+      '    CLI.CPF_CNPJ,'
+      '    V.DATA_VENDA,'
+      #9'  V.ID_VENDA,'
+      '    CAR.MODELO,'
+      '    CAR.ANO_LANCAMENTO'
+      'FROM '
+      #9'VENDA V'
+      #9'INNER JOIN CLIENTE CLI ON V.ID_CLIENTE = CLI.ID_CLIENTE'
+      #9'INNER JOIN CARRO CAR ON V.ID_CARRO = CAR.ID_CARRO'
+      'WHERE '
+      #9'UPPER(CAR.MODELO) = '#39'MAREA'#39
+      #9'AND CAR.ANO_LANCAMENTO = 2021'
+      #9'AND CLI.CPF_CNPJ LIKE '#39'0%'#39
+      #9'-- DESCLASSIFICA CLIENTES QUE COMPRARAM 2 OU MAIS MAREAS'
+      #9'AND CLI.ID_CLIENTE NOT IN ('
+      #9#9#9#9#9#9#9#9'SELECT '
+      #9#9#9#9#9#9#9#9#9'V_SUB.ID_CLIENTE'
+      #9#9#9#9#9#9#9#9'FROM '
+      #9#9#9#9#9#9#9#9#9'VENDA V_SUB'
+      
+        #9#9#9#9#9#9#9#9#9'INNER JOIN CARRO C_SUB ON V_SUB.ID_CARRO = C_SUB.ID_CAR' +
+        'RO'
+      #9#9#9#9#9#9#9#9'WHERE '
+      #9#9#9#9#9#9#9#9#9'UPPER(C_SUB.MODELO) = '#39'MAREA'#39
+      #9#9#9#9#9#9#9#9'GROUP BY '
+      #9#9#9#9#9#9#9#9#9'V_SUB.ID_CLIENTE'
+      #9#9#9#9#9#9#9#9'HAVING COUNT(*) >= 2'
+      #9#9#9#9#9#9#9'  )'
+      'ORDER BY '
+      #9'V.DATA_VENDA ASC'
+      'FETCH FIRST 15 ROWS ONLY')
+    Left = 560
+    Top = 200
+    object qrSorteioID_CLIENTE: TIntegerField
+      FieldName = 'ID_CLIENTE'
+    end
+    object qrSorteioNOME: TWideStringField
+      FieldName = 'NOME'
+      Size = 200
+    end
+    object qrSorteioCPF_CNPJ: TWideStringField
+      FieldName = 'CPF_CNPJ'
+      Size = 14
+    end
+    object qrSorteioDATA_VENDA: TDateField
+      FieldName = 'DATA_VENDA'
+    end
+    object qrSorteioMODELO: TWideStringField
+      FieldName = 'MODELO'
+      Size = 100
+    end
+    object qrSorteioID_VENDA: TIntegerField
+      FieldName = 'ID_VENDA'
+    end
+  end
+  object dsSorteio: TDataSource
+    DataSet = qrSorteio
+    Left = 592
+    Top = 200
+  end
+  object DeleteNaoSorteados: TFDCommand
+    Connection = Connection
+    CommandKind = skDelete
+    CommandText.Strings = (
+      'DELETE'
+      'FROM'
+      '   VENDA V'
+      'WHERE'
+      #9'NOT EXISTS ('
+      '                  SELECT'
+      '                     1'
+      '                  FROM ('
+      '                         SELECT'
+      '                           V_SORT.ID_CLIENTE'
+      '                         FROM'
+      '                           VENDA V_SORT'
+      
+        '                           INNER JOIN CLIENTE C_SORT ON V_SORT.I' +
+        'D_CLIENTE = C_SORT.ID_CLIENTE'
+      
+        '                           INNER JOIN CARRO CAR_SORT ON V_SORT.I' +
+        'D_CARRO = CAR_SORT.ID_CARRO'
+      '                         WHERE'
+      '                           UPPER(CAR_SORT.MODELO) = '#39'MAREA'#39
+      '                           AND CAR_SORT.ANO_LANCAMENTO = 2021'
+      '                           AND C_SORT.CPF_CNPJ LIKE '#39'0%'#39
+      '                           AND C_SORT.ID_CLIENTE NOT IN ('
+      
+        '                                                            SELE' +
+        'CT'
+      
+        '                                                               V' +
+        '_SUB.ID_CLIENTE'
+      '                                                            FROM'
+      
+        '                                                               V' +
+        'ENDA V_SUB'
+      
+        '                                                               I' +
+        'NNER JOIN CARRO C_SUB ON V_SUB.ID_CARRO = C_SUB.ID_CARRO'
+      
+        '                                                            WHER' +
+        'E'
+      
+        '                                                               U' +
+        'PPER(C_SUB.MODELO) = '#39'MAREA'#39
+      
+        '                                                            GROU' +
+        'P BY'
+      
+        '                                                               V' +
+        '_SUB.ID_CLIENTE'
+      
+        '                                                            HAVI' +
+        'NG COUNT(*) >= 2'
+      '                                                         )'
+      '                           ORDER BY'
+      '                              V_SORT.DATA_VENDA ASC'
+      '                           FETCH FIRST 15 ROWS ONLY'
+      '                     ) SORTEADOS'
+      '                  WHERE'
+      '                     SORTEADOS.ID_CLIENTE = V.ID_CLIENTE'
+      '               )')
+    Left = 648
+    Top = 128
+  end
+end
