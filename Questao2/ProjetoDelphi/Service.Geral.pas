@@ -1,0 +1,325 @@
+unit Service.Geral;
+
+interface
+
+uses
+  System.SysUtils, System.Generics.Collections, Model.Entities, Winapi.Windows, Winapi.Messages,
+  System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Data.DB, Vcl.Grids, Vcl.DBGrids, Vcl.StdCtrls, Vcl.Buttons, FireDAC.Comp.Client,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Param,
+  FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf, FireDAC.DApt.Intf,
+  FireDAC.Stan.Async, FireDAC.DApt, FireDAC.Comp.DataSet, FireDAC.UI.Intf,
+  FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Phys, FireDAC.Phys.PG,
+  FireDAC.Phys.PGDef, FireDAC.VCLUI.Wait;
+
+type
+  TTipoObjeto = (toDesconhecido, toCliente, toCarro, toVenda);
+
+  TfmGeral = class(TForm)
+    qrProxIdCliente: TFDQuery;
+    InsertCliente: TFDCommand;
+    InsertCarro: TFDCommand;
+    InsertVenda: TFDCommand;
+    btnCadastrarCarros: TBitBtn;
+    btnSorteio: TBitBtn;
+    GridSorteados: TDBGrid;
+    btnCadastrarClientes: TBitBtn;
+    btnCriarVenda: TBitBtn;
+    btnExcluirVendas: TBitBtn;
+    qrProxIDCarro: TFDQuery;
+    qrCarrosAleatorios: TFDQuery;
+    qrProxIDVenda: TFDQuery;
+    Connection: TFDConnection;
+    qrSorteio: TFDQuery;
+    dsSorteio: TDataSource;
+    qrSorteioID_CLIENTE: TIntegerField;
+    qrSorteioNOME: TWideStringField;
+    qrSorteioCPF_CNPJ: TWideStringField;
+    qrSorteioDATA_VENDA: TDateField;
+    qrSorteioMODELO: TWideStringField;
+    qrSorteioID_VENDA: TIntegerField;
+    DeleteNaoSorteados: TFDCommand;
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure btnCadastrarClientesClick(Sender: TObject);
+    function ProximoIdCliente: Integer;
+    function GeraCPF(AIniciarComZero: Boolean = False): string;
+    function ObterTipoObjeto(AObjeto: TObject): TTipoObjeto;
+    procedure btnCadastrarCarrosClick(Sender: TObject);
+    procedure btnCriarVendaClick(Sender: TObject);
+    procedure btnSorteioClick(Sender: TObject);
+    procedure btnExcluirVendasClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+  private
+    Conexao: TFDConnection;
+    function ProximoIdCarro: Integer;
+    function ProximoIdVenda: Integer;
+    procedure ExcluirVendasNaoSorteadas;
+  public
+    { Public declarations }
+    procedure InserirDadosBD(AObjeto: TObject);
+    procedure ExecutarSql(AQry: TFDQuery; Comando: Integer; const ASql: string; const AParams: array of Variant);
+
+    procedure InserirNovosClientes;
+    procedure InserirNovosCarros;
+    procedure InserirVendasParaNovosClientes;
+    procedure AfterConstruction; override;
+  end;
+
+var
+  fmGeral: TfmGeral;
+  Cliente: TCliente;
+  PrimeiroIdClienteCriado : Integer;
+  qrAux: TFDQuery;
+
+implementation
+
+uses
+   database.connection;
+
+{$R *.dfm}
+
+//Métodos fictícios solicitados no requisito
+procedure TfmGeral.InserirDadosBD(AObjeto: TObject);
+begin
+  case ObterTipoObjeto(AObjeto) of
+      toCliente:
+        begin
+          try
+            ExecutarSql(qrAux, 2, InsertCliente.CommandText.Text,[TCliente(AObjeto).IdCliente, TCliente(AObjeto).Nome, TCliente(AObjeto).Cpf]);
+          finally
+          end;
+        end;
+
+      toCarro:
+        begin
+          try
+            ExecutarSql(qrAux, 2, InsertCarro.CommandText.Text,[TCarro(AObjeto).IdCarro, TCarro(AObjeto).Modelo, TCarro(AObjeto).AnoLancamento]);
+          finally
+          end;
+        end;
+
+      toVenda:
+        begin
+          try
+            ExecutarSql(qrAux, 2, InsertVenda.CommandText.Text,[TVenda(AObjeto).IdVenda, TVenda(AObjeto).IdCliente, TVenda(AObjeto).IdCarro, TVenda(AObjeto).DataVenda]);
+          finally
+          end;
+        end;
+
+      else
+        raise Exception.Create('Classe não suportada para inserção no banco de dados.');
+    end;
+end;
+
+function TfmGeral.ObterTipoObjeto(AObjeto: TObject): TTipoObjeto;
+begin
+  if AObjeto is TCliente then Exit(toCliente);
+  if AObjeto is TCarro   then Exit(toCarro);
+  if AObjeto is TVenda   then Exit(toVenda);
+  Result := toDesconhecido;
+end;
+
+procedure TfmGeral.ExecutarSql(AQry: TFDQuery; Comando: Integer; const ASql: string; const AParams: array of Variant);
+var
+  ACommand: TFDCommand;
+  I: Integer;
+begin
+  // Comando 1 = Abrir, Comando 2 = Executar
+  if Comando = 1 then
+  begin
+    AQry.Connection := Conexao;
+    AQry.Close;
+    AQry.SQL.Text := ASql;
+
+    if Length(AParams) > 0 then
+      AQry.Open(ASql, AParams)
+    else
+      AQry.Open;
+  end;
+  if Comando = 2 then
+  begin
+    ACommand := TFDCommand.Create(nil);
+    ACommand.Connection := Conexao;
+    if Length(AParams) > 0 then
+      ACommand.Execute(ASql, AParams)
+    else
+      ACommand.Execute(ASql);
+  end;
+
+end;
+
+procedure TfmGeral.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  Conexao.Free;
+  qrAux.Free;
+end;
+
+procedure TfmGeral.FormCreate(Sender: TObject);
+begin
+  qrAux := TFDQuery.Create(nil);
+end;
+
+procedure TfmGeral.AfterConstruction;
+begin
+  inherited;
+  Conexao := TConnectionFactory.CriarConexao;
+end;
+
+Function TfmGeral.GeraCPF(AIniciarComZero: Boolean = False): string;
+var
+  D: array[1..11] of Integer;
+  Soma, Resto, I: Integer;
+begin
+  // 1. Definição do primeiro dígito
+  if AIniciarComZero then
+    D[1] := 0
+  else
+    D[1] := Random(9) + 1; // Garante números de 1 a 9 no primeiro dígito
+
+  // 2. Gerar do 2º ao 9º dígito aleatoriamente (0 a 9)
+  for I := 2 to 9 do
+    D[I] := Random(10);
+
+  // 3. Cálculo do Primeiro Dígito Verificador (10º dígito)
+  Soma := 0;
+  for I := 1 to 9 do
+    Soma := Soma + (D[I] * (11 - I));
+
+  Resto := Soma mod 11;
+  if Resto < 2 then
+    D[10] := 0
+  else
+    D[10] := 11 - Resto;
+
+  // 4. Cálculo do Segundo Dígito Verificador (11º dígito)
+  Soma := 0;
+  for I := 1 to 10 do
+    Soma := Soma + (D[I] * (12 - I));
+
+  Resto := Soma mod 11;
+  if Resto < 2 then
+    D[11] := 0
+  else
+    D[11] := 11 - Resto;
+
+  // 5. Formatar a estrutura para string contendo os 11 dígitos
+  Result := Format('%d%d%d%d%d%d%d%d%d%d%d',
+    [D[1], D[2], D[3], D[4], D[5], D[6], D[7], D[8], D[9], D[10], D[11]]);
+end;
+
+//Item 2 - Inserir 5 novos clientes
+procedure TfmGeral.InserirNovosClientes;
+var
+  I, Id_inicial: Integer;
+begin
+  Id_inicial := ProximoIdCliente;
+  PrimeiroIdClienteCriado := Id_inicial;
+  for I := 0 to 4 do
+  begin
+    Cliente := TCliente.Create(Id_inicial + I, 'Cliente Novo ' + IntToStr(I), '0' + GeraCPF);
+    try
+      InserirDadosBD(Cliente);
+    finally
+      Cliente.Free;
+    end;
+  end;
+end;
+
+//Inserir 5 modelos de carros novos
+procedure TfmGeral.InserirNovosCarros;
+var
+  Carro: TCarro;
+  Modelos: array[0..4] of string;
+  I: Integer;
+begin
+  Modelos[0] := 'Argo';
+  Modelos[1] := 'Cronos';
+  Modelos[2] := 'Toro';
+  Modelos[3] := 'Pulse';
+  Modelos[4] := 'Fastback';
+
+  for I := 0 to 4 do
+  begin
+    Carro := TCarro.Create(ProximoIdCarro + I, Modelos[I], 2020);
+    try
+      InserirDadosBD(Carro);
+    finally
+      Carro.Free;
+    end;
+  end;
+end;
+
+//Item 4 - Inserir 1 venda para cada um dos 5 novos clientes (carro diferente cada)
+procedure TfmGeral.InserirVendasParaNovosClientes;
+var
+  Venda: TVenda;
+  Carro: Integer;
+  I: Integer;
+begin
+  qrCarrosAleatorios.Open;
+  qrCarrosAleatorios.First;
+  for I := 0 to 4 do
+  begin
+    Carro := qrCarrosAleatorios.FieldByName('ID_CARRO').AsInteger;
+    Venda := TVenda.Create(ProximoIdVenda + I, PrimeiroIdClienteCriado + I, Carro, Date);
+    try
+      InserirDadosBD(Venda);
+    finally
+      Venda.Free;
+    end;
+    qrCarrosAleatorios.next;
+  end;
+end;
+
+procedure TfmGeral.ExcluirVendasNaoSorteadas;
+begin
+  ExecutarSql(qrAux, 2, DeleteNaoSorteados.CommandText.Text, []);
+end;
+
+function TfmGeral.ProximoIdCliente: Integer;
+Begin
+  qrProxIdCliente.Open;
+
+  Result := qrProxIdCliente.FieldByName('novo_id').AsInteger;
+End;
+
+function TfmGeral.ProximoIdCarro: Integer;
+Begin
+  qrProxIdCarro.Open;
+
+  Result := qrProxIdCarro.FieldByName('novo_id').AsInteger;
+End;
+
+function TfmGeral.ProximoIdVenda: Integer;
+Begin
+  qrProxIdVenda.Open;
+
+  Result := qrProxIdVenda.FieldByName('novo_id').AsInteger;
+End;
+
+procedure TfmGeral.btnCadastrarCarrosClick(Sender: TObject);
+begin
+  InserirNovosCarros;
+end;
+
+procedure TfmGeral.btnCadastrarClientesClick(Sender: TObject);
+begin
+  InserirNovosClientes;
+end;
+
+procedure TfmGeral.btnCriarVendaClick(Sender: TObject);
+begin
+  InserirVendasParaNovosClientes;
+end;
+
+procedure TfmGeral.btnExcluirVendasClick(Sender: TObject);
+begin
+  ExcluirVendasNaoSorteadas;
+end;
+
+procedure TfmGeral.btnSorteioClick(Sender: TObject);
+begin
+  ExecutarSql(qrSorteio, 1, qrSorteio.SQL.Text ,[]);
+end;
+
+end.
